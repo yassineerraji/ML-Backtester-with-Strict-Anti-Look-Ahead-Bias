@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -15,6 +16,18 @@ _COLUMNS = ["open", "high", "low", "close", "volume"]
 def _cache_path(cache_dir: str, ticker: str) -> Path:
     """Return the parquet cache file path for a single ticker."""
     return Path(cache_dir) / f"{ticker}.parquet"
+
+
+def _meta_path(cache_dir: str, ticker: str) -> Path:
+    """Return the sidecar metadata path recording the (start, end) a cache file covers.
+
+    yfinance's `end` is exclusive, so the cached data's own max date is never
+    equal to the requested end — inferring cache completeness from the data's
+    date range (rather than from what was actually requested) would treat a
+    perfectly complete cache as stale on every single call. Recording the
+    requested range explicitly avoids that.
+    """
+    return Path(cache_dir) / f"{ticker}.meta.json"
 
 
 def _download_ticker(ticker: str, start: str, end: str) -> pd.DataFrame:
@@ -48,22 +61,24 @@ def load_ticker(
         volume, restricted to [start, end].
     """
     path = _cache_path(cache_dir, ticker)
-    cached = pd.read_parquet(path) if path.exists() else None
+    meta_path = _meta_path(cache_dir, ticker)
+    meta = json.loads(meta_path.read_text()) if meta_path.exists() else None
 
     needs_download = (
         force_refresh
-        or cached is None
-        or cached.empty
-        or cached.index.min() > pd.Timestamp(start)
-        or cached.index.max() < pd.Timestamp(end)
+        or not path.exists()
+        or meta is None
+        or meta["start"] > start
+        or meta["end"] < end
     )
 
     if needs_download:
         data = _download_ticker(ticker, start, end)
         path.parent.mkdir(parents=True, exist_ok=True)
         data.to_parquet(path)
+        meta_path.write_text(json.dumps({"start": start, "end": end}))
     else:
-        data = cached
+        data = pd.read_parquet(path)
 
     return data.loc[(data.index >= start) & (data.index <= end)]
 

@@ -23,9 +23,19 @@ def make_model(config: Config) -> RegressorMixin:
         config: Pipeline configuration providing random_seed and model_params.
 
     Returns:
-        An unfit scikit-learn-compatible regressor.
+        An unfit scikit-learn-compatible regressor. `deterministic=True` plus
+        `force_row_wise=True` are required for LightGBM to be bit-reproducible
+        across separate process runs, not just within one — `random_state`
+        alone fixes the seed but not the (by default multi-threaded, order-
+        dependent) histogram-building strategy.
     """
-    return LGBMRegressor(random_state=config.random_seed, verbosity=-1, **config.model_params)
+    return LGBMRegressor(
+        random_state=config.random_seed,
+        verbosity=-1,
+        deterministic=True,
+        force_row_wise=True,
+        **config.model_params,
+    )
 
 
 def fit_predict(train: pd.DataFrame, test: pd.DataFrame, config: Config) -> np.ndarray:

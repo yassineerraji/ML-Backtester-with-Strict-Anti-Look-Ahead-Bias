@@ -92,6 +92,28 @@ def test_load_universe_combines_all_tickers(tmp_path, monkeypatch):
     assert list(data.columns) == ["open", "high", "low", "close", "volume", "ticker"]
 
 
+def test_load_ticker_reuses_cache_even_when_data_falls_short_of_requested_end(
+    tmp_path, monkeypatch
+):
+    """Regression test: yfinance's `end` is exclusive, so real returned data never reaches
+    `end` exactly. Staleness must be judged from the requested range (cached via metadata),
+    not from the returned data's own max date, or every call redownloads forever."""
+    calls = []
+
+    def fake_download(ticker, start, end):
+        calls.append((start, end))
+        # Simulate yfinance: data stops one day short of the exclusive `end`.
+        index = pd.date_range(start, "2020-01-30", freq="B", name="date")
+        return pd.DataFrame({"open": 0, "high": 0, "low": 0, "close": 0, "volume": 0}, index=index)
+
+    monkeypatch.setattr(loader, "_download_ticker", fake_download)
+
+    loader.load_ticker("AAPL", "2020-01-01", "2020-01-31", str(tmp_path))
+    loader.load_ticker("AAPL", "2020-01-01", "2020-01-31", str(tmp_path))
+
+    assert len(calls) == 1
+
+
 def test_load_ticker_respects_requested_date_bounds(tmp_path, monkeypatch):
     monkeypatch.setattr(loader, "_download_ticker", lambda t, s, e: _fake_ohlcv(s, e))
 
