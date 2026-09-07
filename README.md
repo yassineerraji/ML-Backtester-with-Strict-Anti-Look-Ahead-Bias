@@ -13,7 +13,7 @@ Build a complete pipeline from ML signal → position → backtest, with an arch
 - Build technical features such as momentum, realized volatility, relative volume, and RSI.
 - Avoid future information in feature calculations. For example, use rolling-window normalization rather than the mean and standard deviation of the entire series.
 
-### 2. ML Model
+### 2. Machine Learning Model
 
 - Use a moderately complex model such as Gradient Boosting, LightGBM, XGBoost, or regularized regression.
 - Keep the focus on the pipeline rather than model sophistication.
@@ -67,6 +67,22 @@ This is the main selling point of the project:
 | Visualization | Equity curves and naive vs. corrected Sharpe comparisons |
 
 An in-house backtester is recommended to keep full control over the purge and embargo mechanism, rather than using a library such as `backtrader` that could obscure the logic.
+
+## Running the Project
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+
+# Regenerate the reports in reports/ from the current Config() defaults
+.venv/bin/python scripts/run_pipeline.py
+
+# Test suite (pure-logic tests run in seconds; tests/app/ runs real backtests, ~1 min)
+.venv/bin/python -m pytest
+
+# Interactive UI — configure universe/windows/costs and see the naive-vs-corrected
+# Sharpe gap, the purge/embargo fold timeline, and the deflated-Sharpe sweep live
+.venv/bin/streamlit run app/streamlit_app.py
+```
 
 ## Documentation Checklist
 

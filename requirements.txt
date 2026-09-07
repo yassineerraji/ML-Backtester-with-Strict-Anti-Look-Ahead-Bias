@@ -1,0 +1,12 @@
+pandas>=2.2
+numpy>=1.26
+yfinance>=0.2.40
+scikit-learn>=1.4
+scipy>=1.11
+lightgbm>=4.3
+pyarrow>=15.0
+matplotlib>=3.8
+streamlit>=1.38
+pytest>=8.0
+black>=24.0
+ruff>=0.4
