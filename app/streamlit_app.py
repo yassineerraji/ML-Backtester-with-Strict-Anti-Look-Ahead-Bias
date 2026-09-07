@@ -5,13 +5,24 @@ Sharpe gap, the purge/embargo fold timeline, and the deflated Sharpe sweep updat
 
 from __future__ import annotations
 
-from datetime import date
+import sys
+from pathlib import Path
 
-import altair as alt
-import pandas as pd
-import streamlit as st
+# `streamlit run app/streamlit_app.py` (and Streamlit Community Cloud's deploy runner)
+# only puts this file's own directory on sys.path, not the repo root — and neither
+# installs this project as a package (Cloud only runs `pip install -r requirements.txt`).
+# Add the repo root explicitly so `app.*` and `ml_backtester.*` resolve either way.
+_REPO_ROOT = str(Path(__file__).resolve().parent.parent)
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
 
-from app.logic import (
+from datetime import date  # noqa: E402
+
+import altair as alt  # noqa: E402
+import pandas as pd  # noqa: E402
+import streamlit as st  # noqa: E402
+
+from app.logic import (  # noqa: E402
     build_config_from_form,
     compute_fold_timeline,
     cumulative_equity,
@@ -19,14 +30,17 @@ from app.logic import (
     grid_from_editor_dataframe,
     validate_config,
 )
-from ml_backtester.config import DEFAULT_UNIVERSE, Config
-from ml_backtester.experiments.run_comparison import build_dataset, run_walk_forward
-from ml_backtester.experiments.run_deflation_study import (
+from ml_backtester.config import DEFAULT_UNIVERSE, Config  # noqa: E402
+from ml_backtester.experiments.run_comparison import build_dataset, run_walk_forward  # noqa: E402
+from ml_backtester.experiments.run_deflation_study import (  # noqa: E402
     MODEL_HYPERPARAMETER_GRID,
     compute_deflated_sharpe,
     run_config_sweep,
 )
-from ml_backtester.validation.splitters import PurgedEmbargoedSplitter, WalkForwardSplitter
+from ml_backtester.validation.splitters import (  # noqa: E402
+    PurgedEmbargoedSplitter,
+    WalkForwardSplitter,
+)
 
 SEGMENT_COLORS = {
     "train": "#4C78A8",
